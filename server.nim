@@ -1,17 +1,24 @@
-import asyncnet, asyncdispatch, nativesockets, strutils, lib/dns
+import asyncnet, asyncdispatch, nativesockets
+import strutils, options, tables
+import lib/dns
 
-proc handleDnsRequest(data: string) =
-  let header = parseHeader(data[0 .. 11])
-  var questions: seq[DnsQuestion] = @[]
-  var offset = 12
+const records = {
+  DnsType.A: {"m5w.de": @["\127\0\0\1"]}.toTable,
+  DnsType.TXT: {"m5w.de": @["hello world", "abc"]}.toTable
+}.toTable
 
-  for i in (1.uint32)..header.qdcount:
-    let (question, read) = parseQuestion(data[offset .. len(data) - 1])
-    questions.add(question)
-    offset += read.int
+proc handleDnsRequest(data: string): Option[string] =
+  let msg = parseMessage(data)
 
-  let msg = DnsMessage(header: header, questions: questions)
-  echo msg
+  if len(msg.questions) == 0:
+    return
+
+  let question = msg.questions[0]
+  # todo: handle missing record
+  let answer = records[question.qtype][question.qname]
+  let response = mkResponse(msg.header.id, question, answer)
+
+  return some(packMessage(response))
 
 proc serve() {.async.} =
   let server = newAsyncSocket(sockType=SockType.SOCK_DGRAM, protocol=Protocol.IPPROTO_UDP, buffered = false)
@@ -19,10 +26,14 @@ proc serve() {.async.} =
   server.bindAddr(Port(12345))
 
   while true:
-    echo "start loop"
-    let request = await server.recvFrom(size=512)
-    echo "received"
-    handleDnsRequest(request.data)
+    try:
+      let request = await server.recvFrom(size=512)
+      let response = handleDnsRequest(request.data)
+
+      if (response.isSome):
+        await server.sendTo(request.address, request.port, response.unsafeGet)
+    except:
+      continue
 
 proc main() =
   asyncCheck serve()
