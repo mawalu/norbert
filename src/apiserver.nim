@@ -1,4 +1,4 @@
-import asynchttpserver, asyncdispatch, json, strtabs, base64, strutils, strformat, options, tables
+import asynchttpserver, asyncdispatch, json, strtabs, base64, strutils, strformat, options
 import ../lib/dns, state
 
 const headers = {"Content-type": "text/plain; charset=utf-8"}
