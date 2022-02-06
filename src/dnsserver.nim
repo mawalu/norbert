@@ -5,6 +5,8 @@ import ../lib/dns, state
 proc handleDnsRequest(records: RecordsTable, data: string): Option[string] =
   let msg = parseMessage(data)
 
+  echo msg
+
   if len(msg.questions) == 0:
     return
 
@@ -14,6 +16,8 @@ proc handleDnsRequest(records: RecordsTable, data: string): Option[string] =
     question,
     records.getOrDefault((name: question.qname, dtype: question.qtype), @[])
   )
+
+  echo response
 
   return some(packMessage(response))
 
