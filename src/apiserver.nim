@@ -46,7 +46,7 @@ proc present(req: Request, auth: Auth, base: string): Future[void] {.async.} =
 
   addRecord(
     records,
-    (name: name, dtype: DnsType.TXT),
+    (name: name.toLowerAscii(), dtype: DnsType.TXT),
     record.value
   )
 
@@ -54,7 +54,7 @@ proc present(req: Request, auth: Auth, base: string): Future[void] {.async.} =
 
 proc cleanup(req: Request, auth: Auth, base: string): Future[void] {.async.} =
   let record = to(parseJson(req.body), NewRecordReq)
-  let name = trimName(record.fqdn) & "." & auth.name & "." & base
+  let name = trimName(record.fqdn.toLowerAscii()) & "." & auth.name & "." & base
 
   echo &"Deleting TXT record for {name} with value {record.value}"
 

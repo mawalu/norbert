@@ -14,7 +14,7 @@ proc handleDnsRequest(records: RecordsTable, data: string): Option[string] =
   let response = mkResponse(
     msg.header.id,
     question,
-    records.getOrDefault((name: question.qname, dtype: question.qtype), @[])
+    records.getOrDefault((name: question.qname.toLowerAscii(), dtype: question.qtype), @[])
   )
 
   echo response
