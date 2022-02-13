@@ -142,6 +142,15 @@ func parseQuestion*(data: string, startOffset: uint16): (DnsQuestion, uint16) =
     qclass: DnsClass(toUint16(data[offset + 3], data[offset + 2]))
   ), offset + 4)
 
+func packQuestion*(data: DnsQuestion): string =
+  var question = ""
+
+  question.add(packNameField(data.qname))
+  question.add(uint16ToString(data.qtype.uint16))
+  question.add(uint16ToString(data.qclass.uint16))
+
+  return question
+
 # BROKEN
 func parseResourceRecord*(data: string, startOffset: uint16): (DnsRecord, uint16) =
   let (names, offset) = parseNameField(data, startOffset)
@@ -183,6 +192,9 @@ func parseMessage*(data: string): DnsMessage =
 func packMessage*(message: DnsMessage): string =
   var encoded = packHeader(message.header)
 
+  for question in message.questions:
+    encoded.add(packQuestion(question))
+
   for answer in message.answer:
     encoded.add(packResourceRecord(answer))
 
@@ -205,7 +217,9 @@ func mkResponse*(id: uint16, question: DnsQuestion, answer: seq[string]): DnsMes
       qr: DnsQr.RESPONSE,
       aa: true,
       rcode: Rcode.NO_ERROR,
+      qdcount: 1,
       ancount: len(answer).uint16
     ),
+    questions: @[question],
     answer: answer.map(proc (a: string): DnsRecord = mkRecord(question.qtype, question.qname, a))
   )

@@ -1,4 +1,4 @@
-import tables, strtabs, sequtils, nativesockets, strutils
+import tables, strtabs, sequtils, nativesockets
 import ../lib/dns
 
 type
